@@ -6,10 +6,13 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\UserResource;
 
 class AuthController extends Controller
 {
+    // ✅ Register
     public function register(Request $request)
     {
         $validated = $request->validate([
@@ -30,14 +33,15 @@ class AuthController extends Controller
         ], 201);
     }
 
+    // ✅ Login
     public function login(Request $request)
     {
         $credentials = $request->validate([
             'email'    => 'required|email',
             'password' => 'required'
         ]);
+
         $user = User::where('email', $credentials['email'])->first();
-        // dd($user);
 
         if (! $user || ! Hash::check($credentials['password'], $user->password)) {
             throw ValidationException::withMessages([
@@ -45,9 +49,7 @@ class AuthController extends Controller
             ]);
         }
 
-
         $token = $user->createToken('auth-token')->plainTextToken;
-
 
         return response()->json([
             'message' => 'Login successful.',
@@ -57,12 +59,13 @@ class AuthController extends Controller
         ]);
     }
 
+    // ✅ Get Authenticated User
     public function user(Request $request)
     {
-
         return new UserResource($request->user());
     }
 
+    // ✅ Logout
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
@@ -71,6 +74,24 @@ class AuthController extends Controller
             'message' => 'Logged out successfully. All tokens revoked.'
         ]);
     }
+
+    // ✅ Change Password
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'old_password' => 'required',
+            'new_password' => 'required|min:6|confirmed',
+        ]);
+
+        $user = $request->user();
+
+        if (!Hash::check($request->old_password, $user->password)) {
+            return response()->json(['message' => 'Old password is incorrect'], 403);
+        }
+
+        $user->password = bcrypt($request->new_password);
+        $user->save();
+
+        return response()->json(['message' => 'Password changed successfully']);
+    }
 }
-
-
