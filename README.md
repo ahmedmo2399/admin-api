@@ -74,3 +74,4 @@ Before you begin, ensure you have met the following requirements:
 - `DELETE /api/posts/{id}` - Delete a post.
 
 > Note: Use Bearer Token for authenticated routes.
+# admin-api
